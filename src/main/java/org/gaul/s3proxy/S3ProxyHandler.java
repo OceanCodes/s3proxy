@@ -155,7 +155,8 @@ final class S3ProxyHandler extends AbstractHandler {
             "prefix",
             "Signature",
             "uploadId",
-            "uploads"
+            "uploads",
+            "response-content-disposition"
     );
     /** All supported x-amz- headers, except for x-amz-meta- user metadata. */
     private static final Set<String> SUPPORTED_X_AMZ_HEADERS = ImmutableSet.of(
@@ -1355,7 +1356,7 @@ final class S3ProxyHandler extends AbstractHandler {
         }
 
         response.setStatus(HttpServletResponse.SC_OK);
-        addMetadataToResponse(response, metadata);
+        addMetadataToResponse(request, response, metadata);
     }
 
     private void handleGetBlob(HttpServletRequest request,
@@ -1416,7 +1417,7 @@ final class S3ProxyHandler extends AbstractHandler {
 
         response.setStatus(status);
 
-        addMetadataToResponse(response, blob.getMetadata());
+        addMetadataToResponse(request, response, blob.getMetadata());
         // TODO: handles only a single range due to jclouds limitations
         Collection<String> contentRanges =
                 blob.getAllHeaders().get(HttpHeaders.CONTENT_RANGE);
@@ -2291,14 +2292,13 @@ final class S3ProxyHandler extends AbstractHandler {
         }
     }
 
-    private static void addMetadataToResponse(HttpServletResponse response,
+    private static void addMetadataToResponse(HttpServletRequest request,
+            HttpServletResponse response,
             BlobMetadata metadata) {
         ContentMetadata contentMetadata =
                 metadata.getContentMetadata();
         response.addHeader(HttpHeaders.CACHE_CONTROL,
                 contentMetadata.getCacheControl());
-        response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
-                contentMetadata.getContentDisposition());
         response.addHeader(HttpHeaders.CONTENT_ENCODING,
                 contentMetadata.getContentEncoding());
         response.addHeader(HttpHeaders.CONTENT_LANGUAGE,
@@ -2306,6 +2306,15 @@ final class S3ProxyHandler extends AbstractHandler {
         response.addHeader(HttpHeaders.CONTENT_LENGTH,
                 contentMetadata.getContentLength().toString());
         response.setContentType(contentMetadata.getContentType());
+        String responseContentDisposition = request.getParameter(
+            "response-content-disposition");
+        if (responseContentDisposition != null) {
+            response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
+                responseContentDisposition);
+        } else {
+            response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
+                contentMetadata.getContentDisposition());
+        }
         HashCode contentMd5 = contentMetadata.getContentMD5AsHashCode();
         if (contentMd5 != null) {
             byte[] contentMd5Bytes = contentMd5.asBytes();
