@@ -3,11 +3,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: codeocean/build-docker:17.03
+      - image: codeocean/build-docker:17.09
 
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 17.09.0-ce
 
       - run:
           name: build docker image
