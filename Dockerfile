@@ -1,11 +1,11 @@
+FROM maven:3-jdk-7-onbuild as builder
+
 FROM anapsix/alpine-java:jre7
 MAINTAINER Andrew Gaul <andrew@gaul.org>
 
 WORKDIR /opt/s3proxy
-COPY \
-    target/s3proxy \
-    src/main/resources/run-docker-container.sh \
-    /opt/s3proxy/
+COPY --from=builder /usr/src/app/target/s3proxy /opt/s3proxy/
+COPY src/main/resources/run-docker-container.sh /opt/s3proxy/
 
 ENV \
     LOG_LEVEL="info" \

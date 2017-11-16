@@ -1,0 +1,28 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: codeocean/build-docker:17.03
+
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run:
+          name: build docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+                make image
+            else
+                make image-branch
+            fi
+
+      - deploy:
+          name: push docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+                make push
+            else
+                make push-branch
+            fi
